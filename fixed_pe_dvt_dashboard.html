@@ -1,0 +1,1692 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MediMonitor Pro - PE/DVT Monitoring System</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-blue: #2563eb;
+            --success-green: #10b981;
+            --warning-yellow: #f59e0b;
+            --danger-red: #ef4444;
+            --info-blue: #3b82f6;
+            --dark-bg: #1f2937;
+            --light-bg: #f9fafb;
+            --card-bg: #ffffff;
+            --text-primary: #1f2937;
+            --text-secondary: #6b7280;
+            --border-color: #e5e7eb;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--light-bg);
+            color: var(--text-primary);
+        }
+
+        /* Login Page Styles */
+        .login-container {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .login-card {
+            background: var(--card-bg);
+            padding: 2rem;
+            border-radius: 16px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 400px;
+        }
+
+        .login-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .logo {
+            font-size: 2rem;
+            font-weight: bold;
+            color: var(--primary-blue);
+            margin-bottom: 0.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary-blue);
+        }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background-color: var(--primary-blue);
+            color: white;
+            width: 100%;
+        }
+
+        .btn-primary:hover {
+            background-color: #1d4ed8;
+        }
+
+        /* Dashboard Styles */
+        .dashboard {
+            display: none;
+        }
+
+        .dashboard.active {
+            display: block;
+        }
+
+        .header {
+            background: var(--card-bg);
+            border-bottom: 1px solid var(--border-color);
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            height: 70px;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 2rem;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .patient-selector {
+            padding: 0.5rem 1rem;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            min-width: 200px;
+        }
+
+        .alert-badge {
+            position: relative;
+            background: var(--danger-red);
+            color: white;
+            padding: 0.25rem 0.5rem;
+            border-radius: 12px;
+            font-size: 0.875rem;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.7; }
+            100% { opacity: 1; }
+        }
+
+        .connection-status {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .status-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: var(--success-green);
+        }
+
+        .main-container {
+            margin-top: 70px;
+            padding: 2rem;
+            display: grid;
+            grid-template-columns: 1fr 350px;
+            gap: 2rem;
+            min-height: calc(100vh - 70px);
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1.5rem;
+            height: fit-content;
+        }
+
+        .vital-card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            border-left: 4px solid transparent;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+
+        .vital-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .vital-card.normal {
+            border-left-color: var(--success-green);
+        }
+
+        .vital-card.warning {
+            border-left-color: var(--warning-yellow);
+        }
+
+        .vital-card.critical {
+            border-left-color: var(--danger-red);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .card-title {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .card-value {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+
+        .card-unit {
+            font-size: 1rem;
+            color: var(--text-secondary);
+            margin-left: 0.5rem;
+        }
+
+        .card-trend {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.875rem;
+        }
+
+        .trend-up {
+            color: var(--danger-red);
+        }
+
+        .trend-down {
+            color: var(--success-green);
+        }
+
+        .trend-stable {
+            color: var(--text-secondary);
+        }
+
+        .mini-chart {
+            height: 60px;
+            margin-top: 1rem;
+        }
+
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .sidebar-card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .sidebar-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: var(--text-primary);
+        }
+
+        .patient-info {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .patient-avatar {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary-blue), var(--info-blue));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 2rem;
+            font-weight: bold;
+            margin: 0 auto;
+        }
+
+        .patient-details {
+            text-align: center;
+        }
+
+        .patient-name {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+
+        .patient-id {
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+        }
+
+        .alert-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.75rem;
+            border-radius: 8px;
+            margin-bottom: 0.5rem;
+            border-left: 4px solid;
+        }
+
+        .alert-critical {
+            background: rgba(239, 68, 68, 0.1);
+            border-left-color: var(--danger-red);
+        }
+
+        .alert-warning {
+            background: rgba(245, 158, 11, 0.1);
+            border-left-color: var(--warning-yellow);
+        }
+
+        .alert-info {
+            background: rgba(59, 130, 246, 0.1);
+            border-left-color: var(--info-blue);
+        }
+
+        .alert-content {
+            flex: 1;
+        }
+
+        .alert-title {
+            font-weight: 500;
+            font-size: 0.875rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .alert-time {
+            color: var(--text-secondary);
+            font-size: 0.75rem;
+        }
+
+        .alert-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .btn-sm {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.75rem;
+            border-radius: 4px;
+        }
+
+        .device-status {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .device-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .device-item:hover {
+            background-color: #f8f9fa;
+        }
+
+        .device-info {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .device-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+        }
+
+        .chest-device {
+            background: var(--primary-blue);
+        }
+
+        .leg-device {
+            background: var(--success-green);
+        }
+
+        .battery-level {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .battery-bar {
+            width: 30px;
+            height: 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 2px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .battery-fill {
+            height: 100%;
+            background: var(--success-green);
+            transition: all 0.3s;
+        }
+
+        .risk-score {
+            text-align: center;
+            padding: 2rem 1rem;
+        }
+
+        .risk-circle {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            margin: 0 auto 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: white;
+        }
+
+        .risk-low {
+            background: var(--success-green);
+        }
+
+        .risk-moderate {
+            background: var(--warning-yellow);
+        }
+
+        .risk-high {
+            background: var(--danger-red);
+        }
+
+        .risk-label {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .emergency-btn {
+            width: 100%;
+            background: var(--danger-red);
+            color: white;
+            padding: 1rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.125rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 1rem;
+        }
+
+        .emergency-btn:hover {
+            background: #dc2626;
+            transform: translateY(-1px);
+        }
+
+        /* Error Handling */
+        .error-message {
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--danger-red);
+            padding: 1rem;
+            border-radius: 8px;
+            border-left: 4px solid var(--danger-red);
+            margin-bottom: 1rem;
+            display: none;
+        }
+
+        /* Loading States */
+        .loading {
+            position: relative;
+            pointer-events: none;
+        }
+
+        .loading::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--border-color);
+            border-top-color: var(--primary-blue);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+
+        /* Responsive Design */
+        @media (max-width: 1200px) {
+            .main-container {
+                grid-template-columns: 1fr;
+            }
+            
+            .sidebar {
+                order: -1;
+            }
+
+            .dashboard-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .header {
+                padding: 1rem;
+                flex-direction: column;
+                height: auto;
+                gap: 1rem;
+            }
+
+            .header-left {
+                flex-direction: column;
+                gap: 1rem;
+                width: 100%;
+            }
+
+            .header-right {
+                gap: 1rem;
+                justify-content: space-between;
+                width: 100%;
+            }
+            
+            .main-container {
+                padding: 1rem;
+                margin-top: 120px;
+            }
+
+            .patient-selector {
+                min-width: auto;
+                width: 100%;
+            }
+        }
+
+        /* Animation Classes */
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Accessibility improvements */
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border: 0;
+        }
+
+        /* Focus styles for better accessibility */
+        .btn:focus,
+        .form-control:focus,
+        .patient-selector:focus {
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
+        }
+
+        .device-item:focus,
+        .vital-card:focus {
+            outline: 2px solid var(--primary-blue);
+            outline-offset: 2px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Error Message Container -->
+    <div id="errorMessage" class="error-message">
+        <strong>Error:</strong> <span id="errorText"></span>
+    </div>
+
+    <!-- Login Page -->
+    <div id="loginPage" class="login-container">
+        <div class="login-card fade-in">
+            <div class="login-header">
+                <div class="logo">
+                    <i class="fas fa-heartbeat" aria-hidden="true"></i>
+                    MediMonitor Pro
+                </div>
+                <p style="color: var(--text-secondary); margin-bottom: 2rem;">
+                    PE/DVT Monitoring System
+                </p>
+            </div>
+            <form id="loginForm" novalidate>
+                <div class="form-group">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" class="form-control" placeholder="Enter your username" required autocomplete="username">
+                    <div class="error-text" id="usernameError" style="color: var(--danger-red); font-size: 0.875rem; margin-top: 0.25rem; display: none;"></div>
+                </div>
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" class="form-control" placeholder="Enter your password" required autocomplete="current-password">
+                    <div class="error-text" id="passwordError" style="color: var(--danger-red); font-size: 0.875rem; margin-top: 0.25rem; display: none;"></div>
+                </div>
+                <div class="form-group" style="display: flex; align-items: center; gap: 0.5rem;">
+                    <input type="checkbox" id="remember" style="margin: 0;" aria-describedby="remember-help">
+                    <label for="remember" style="margin: 0;">Remember me</label>
+                    <div id="remember-help" class="sr-only">Keep you logged in on this device</div>
+                </div>
+                <button type="submit" class="btn btn-primary" id="loginBtn">
+                    <i class="fas fa-sign-in-alt" aria-hidden="true"></i> Sign In
+                </button>
+                <p style="text-align: center; margin-top: 1rem; color: var(--text-secondary); font-size: 0.875rem;">
+                    Demo Credentials: admin / password
+                </p>
+            </form>
+        </div>
+    </div>
+
+    <!-- Dashboard -->
+    <div id="dashboard" class="dashboard">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-left">
+                <div class="logo">
+                    <i class="fas fa-heartbeat" aria-hidden="true"></i>
+                    MediMonitor Pro
+                </div>
+                <label for="patientSelect" class="sr-only">Select Patient</label>
+                <select class="patient-selector" id="patientSelect" aria-label="Patient selector">
+                    <option value="1">Sarah Johnson (ID: 12345)</option>
+                    <option value="2">Robert Chen (ID: 67890)</option>
+                    <option value="3">Maria Garcia (ID: 54321)</option>
+                </select>
+                <div class="alert-badge" id="alertBadge" role="alert" aria-live="polite">
+                    <i class="fas fa-exclamation-triangle" aria-hidden="true"></i>
+                    <span class="sr-only">Alert count:</span>3 Alerts
+                </div>
+            </div>
+            <div class="header-right">
+                <div class="connection-status">
+                    <div class="status-indicator" aria-hidden="true"></div>
+                    <span id="connectionStatus">Connected</span>
+                </div>
+                <div id="currentTime" aria-live="polite"></div>
+                <button class="btn btn-primary" onclick="logout()" aria-label="Logout">
+                    <i class="fas fa-sign-out-alt" aria-hidden="true"></i> Logout
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Container -->
+        <main class="main-container">
+            <!-- Dashboard Grid -->
+            <div class="dashboard-grid" role="main" aria-label="Patient vital signs dashboard">
+                <!-- Row 1 - Critical Vital Signs -->
+                <div class="vital-card normal" id="heartRateCard" tabindex="0" role="button" aria-label="Heart rate monitoring card">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <i class="fas fa-heartbeat" aria-hidden="true"></i> Heart Rate
+                        </div>
+                    </div>
+                    <div class="card-value" aria-live="polite">
+                        <span id="heartRateValue">78</span>
+                        <span class="card-unit">BPM</span>
+                    </div>
+                    <div class="card-trend trend-stable">
+                        <i class="fas fa-minus" aria-hidden="true"></i>
+                        <span>Stable from baseline</span>
+                    </div>
+                    <canvas id="heartRateChart" class="mini-chart" aria-label="Heart rate trend chart"></canvas>
+                </div>
+
+                <div class="vital-card normal" id="oxygenCard" tabindex="0" role="button" aria-label="Blood oxygen monitoring card">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <i class="fas fa-lungs" aria-hidden="true"></i> Blood Oxygen
+                        </div>
+                    </div>
+                    <div class="card-value" aria-live="polite">
+                        <span id="oxygenValue">98</span>
+                        <span class="card-unit">%</span>
+                    </div>
+                    <div class="card-trend trend-stable">
+                        <i class="fas fa-minus" aria-hidden="true"></i>
+                        <span>Within normal range</span>
+                    </div>
+                    <canvas id="oxygenChart" class="mini-chart" aria-label="Blood oxygen trend chart"></canvas>
+                </div>
+
+                <div class="vital-card normal" id="respiratoryCard" tabindex="0" role="button" aria-label="Respiratory rate monitoring card">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <i class="fas fa-wind" aria-hidden="true"></i> Respiratory Rate
+                        </div>
+                    </div>
+                    <div class="card-value" aria-live="polite">
+                        <span id="respiratoryValue">16</span>
+                        <span class="card-unit">/min</span>
+                    </div>
+                    <div class="card-trend trend-stable">
+                        <i class="fas fa-minus" aria-hidden="true"></i>
+                        <span>Regular pattern</span>
+                    </div>
+                    <canvas id="respiratoryChart" class="mini-chart" aria-label="Respiratory rate trend chart"></canvas>
+                </div>
+
+                <!-- Row 2 - Circulatory Health -->
+                <div class="vital-card normal" id="pttCard" tabindex="0" role="button" aria-label="Pulse transit time monitoring card">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <i class="fas fa-tachometer-alt" aria-hidden="true"></i> Pulse Transit Time
+                        </div>
+                    </div>
+                    <div class="card-value" aria-live="polite">
+                        <span id="pttValue">280</span>
+                        <span class="card-unit">ms</span>
+                    </div>
+                    <div class="card-trend trend-stable">
+                        <i class="fas fa-minus" aria-hidden="true"></i>
+                        <span>Normal arterial stiffness</span>
+                    </div>
+                    <canvas id="pttChart" class="mini-chart" aria-label="Pulse transit time trend chart"></canvas>
+                </div>
+
+                <div class="vital-card normal" id="hrvCard" tabindex="0" role="button" aria-label="Heart rate variability monitoring card">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <i class="fas fa-brain" aria-hidden="true"></i> Heart Rate Variability
+                        </div>
+                    </div>
+                    <div class="card-value" aria-live="polite">
+                        <span id="hrvValue">45</span>
+                        <span class="card-unit">RMSSD</span>
+                    </div>
+                    <div class="card-trend trend-stable">
+                        <i class="fas fa-minus" aria-hidden="true"></i>
+                        <span>Low stress level</span>
+                    </div>
+                    <canvas id="hrvChart" class="mini-chart" aria-label="Heart rate variability trend chart"></canvas>
+                </div>
+
+                <div class="vital-card normal" id="chestExpansionCard" tabindex="0" role="button" aria-label="Chest expansion monitoring card">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <i class="fas fa-expand-arrows-alt" aria-hidden="true"></i> Chest Expansion
+                        </div>
+                    </div>
+                    <div class="card-value" aria-live="polite">
+                        <span id="chestExpansionValue">85</span>
+                        <span class="card-unit">%</span>
+                    </div>
+                    <div class="card-trend trend-stable">
+                        <i class="fas fa-minus" aria-hidden="true"></i>
+                        <span>Normal breathing depth</span>
+                    </div>
+                    <canvas id="chestExpansionChart" class="mini-chart" aria-label="Chest expansion trend chart"></canvas>
+                </div>
+
+                <!-- Row 3 - DVT Risk Monitoring -->
+                <div class="vital-card warning" id="legTempCard" tabindex="0" role="button" aria-label="Leg temperature monitoring card">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <i class="fas fa-thermometer-half" aria-hidden="true"></i> Leg Temperature
+                        </div>
+                    </div>
+                    <div class="card-value" aria-live="polite">
+                        <span id="legTempValue">36.8</span>
+                        <span class="card-unit">°C</span>
+                    </div>
+                    <div class="card-trend trend-up">
+                        <i class="fas fa-arrow-up" aria-hidden="true"></i>
+                        <span>Left: 37.2°C | Right: 36.4°C</span>
+                    </div>
+                    <canvas id="legTempChart" class="mini-chart" aria-label="Leg temperature trend chart"></canvas>
+                </div>
+
+                <div class="vital-card normal" id="legSwellingCard" tabindex="0" role="button" aria-label="Leg swelling monitoring card">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <i class="fas fa-ruler" aria-hidden="true"></i> Leg Swelling
+                        </div>
+                    </div>
+                    <div class="card-value" aria-live="polite">
+                        <span id="legSwellingValue">+2.1</span>
+                        <span class="card-unit">%</span>
+                    </div>
+                    <div class="card-trend trend-stable">
+                        <i class="fas fa-minus" aria-hidden="true"></i>
+                        <span>Minimal change from baseline</span>
+                    </div>
+                    <canvas id="legSwellingChart" class="mini-chart" aria-label="Leg swelling trend chart"></canvas>
+                </div>
+
+                <div class="vital-card warning" id="riskScoreCard" tabindex="0" role="button" aria-label="PE DVT risk score card">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <i class="fas fa-shield-alt" aria-hidden="true"></i> PE/DVT Risk Score
+                        </div>
+                    </div>
+                    <div class="risk-score">
+                        <div class="risk-circle risk-moderate" aria-live="polite">
+                            MODERATE
+                        </div>
+                        <div class="risk-label">Risk Level</div>
+                        <div style="color: var(--text-secondary); font-size: 0.875rem;">
+                            Last assessment: <span id="lastAssessment">2 minutes ago</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sidebar -->
+            <aside class="sidebar" role="complementary" aria-label="Patient information and alerts">
+                <!-- Patient Information -->
+                <div class="sidebar-card">
+                    <h3 class="sidebar-title">Patient Information</h3>
+                    <div class="patient-info">
+                        <div class="patient-avatar" aria-hidden="true">SJ</div>
+                        <div class="patient-details">
+                            <div class="patient-name">Sarah Johnson</div>
+                            <div class="patient-id">ID: 12345 | Age: 72</div>
+                            <div style="color: var(--text-secondary); font-size: 0.875rem; margin-top: 0.5rem;">
+                                Post-surgical Day 3<br>
+                                PE Treatment: Rivaroxaban 20mg
+                            </div>
+                        </div>
+                    </div>
+                    <button class="emergency-btn" aria-label="Contact emergency services">
+                        <i class="fas fa-phone" aria-hidden="true"></i> Emergency Contact
+                    </button>
+                </div>
+
+                <!-- Recent Alerts -->
+                <div class="sidebar-card">
+                    <h3 class="sidebar-title">Recent Alerts</h3>
+                    <div class="alert-item alert-warning">
+                        <div class="alert-content">
+                            <div class="alert-title">Temperature Differential</div>
+                            <div class="alert-time">5 minutes ago</div>
+                        </div>
+                        <div class="alert-actions">
+                            <button class="btn btn-sm btn-primary" data-alert-id="temp-diff">Ack</button>
+                        </div>
+                    </div>
+                    <div class="alert-item alert-critical">
+                        <div class="alert-content">
+                            <div class="alert-title">Heart Rate Spike</div>
+                            <div class="alert-time">12 minutes ago</div>
+                        </div>
+                        <div class="alert-actions">
+                            <button class="btn btn-sm btn-primary" data-alert-id="hr-spike">Ack</button>
+                        </div>
+                    </div>
+                    <div class="alert-item alert-info">
+                        <div class="alert-content">
+                            <div class="alert-title">Device Connected</div>
+                            <div class="alert-time">1 hour ago</div>
+                        </div>
+                        <div class="alert-actions">
+                            <span style="color: var(--success-green); font-size: 0.75rem;">Resolved</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Device Status -->
+                <div class="sidebar-card">
+                    <h3 class="sidebar-title">Device Status</h3>
+                    <div class="device-status">
+                        <div class="device-item" tabindex="0" role="button" aria-label="Chest belt device status">
+                            <div class="device-info">
+                                <div class="device-icon chest-device" aria-hidden="true">
+                                    <i class="fas fa-vest"></i>
+                                </div>
+                                <div>
+                                    <div style="font-weight: 500;">Chest Belt</div>
+                                    <div class="device-connection-status" style="color: var(--text-secondary); font-size: 0.875rem;">Connected</div>
+                                </div>
+                            </div>
+                            <div class="battery-level">
+                                <div class="battery-bar" aria-label="Battery level 85%">
+                                    <div class="battery-fill" style="width: 85%;"></div>
+                                </div>
+                                <span style="font-size: 0.75rem;">85%</span>
+                            </div>
+                        </div>
+                        <div class="device-item" tabindex="0" role="button" aria-label="Calf strap device status">
+                            <div class="device-info">
+                                <div class="device-icon leg-device" aria-hidden="true">
+                                    <i class="fas fa-running"></i>
+                                </div>
+                                <div>
+                                    <div style="font-weight: 500;">Calf Strap</div>
+                                    <div class="device-connection-status" style="color: var(--text-secondary); font-size: 0.875rem;">Connected</div>
+                                </div>
+                            </div>
+                            <div class="battery-level">
+                                <div class="battery-bar" aria-label="Battery level 72%">
+                                    <div class="battery-fill" style="width: 72%;"></div>
+                                </div>
+                                <span style="font-size: 0.75rem;">72%</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+        </main>
+    </div>
+
+    <script>
+        // Global variables
+        let charts = {};
+        let simulatedData = {
+            heartRate: [],
+            oxygen: [],
+            respiratory: [],
+            ptt: [],
+            hrv: [],
+            chestExpansion: [],
+            legTemp: [],
+            legSwelling: []
+        };
+        let updateInterval = null;
+        let timeInterval = null;
+        let isInitialized = false;
+
+        // Error handling utility
+        function showError(message) {
+            const errorDiv = document.getElementById('errorMessage');
+            const errorText = document.getElementById('errorText');
+            if (errorDiv && errorText) {
+                errorText.textContent = message;
+                errorDiv.style.display = 'block';
+                setTimeout(() => {
+                    errorDiv.style.display = 'none';
+                }, 5000);
+            }
+            console.error('Dashboard Error:', message);
+        }
+
+        // Safe DOM element getter
+        function safeGetElement(id) {
+            const element = document.getElementById(id);
+            if (!element) {
+                showError(`Element with ID '${id}' not found`);
+                return null;
+            }
+            return element;
+        }
+
+        // Initialize data arrays
+        function initializeData() {
+            try {
+                for (let i = 0; i < 20; i++) {
+                    simulatedData.heartRate.push(Math.floor(Math.random() * 20) + 70);
+                    simulatedData.oxygen.push(Math.floor(Math.random() * 5) + 95);
+                    simulatedData.respiratory.push(Math.floor(Math.random() * 6) + 14);
+                    simulatedData.ptt.push(Math.floor(Math.random() * 40) + 260);
+                    simulatedData.hrv.push(Math.floor(Math.random() * 20) + 35);
+                    simulatedData.chestExpansion.push(Math.floor(Math.random() * 20) + 75);
+                    simulatedData.legTemp.push(parseFloat((Math.random() * 2 + 36).toFixed(1)));
+                    simulatedData.legSwelling.push(parseFloat((Math.random() * 4 - 1).toFixed(1)));
+                }
+            } catch (error) {
+                showError('Failed to initialize data: ' + error.message);
+            }
+        }
+
+        // Form validation
+        function validateLoginForm(username, password) {
+            const usernameError = document.getElementById('usernameError');
+            const passwordError = document.getElementById('passwordError');
+            let isValid = true;
+
+            // Clear previous errors
+            if (usernameError) usernameError.style.display = 'none';
+            if (passwordError) passwordError.style.display = 'none';
+
+            // Validate username
+            if (!username || username.trim().length === 0) {
+                if (usernameError) {
+                    usernameError.textContent = 'Username is required';
+                    usernameError.style.display = 'block';
+                }
+                isValid = false;
+            }
+
+            // Validate password
+            if (!password || password.trim().length === 0) {
+                if (passwordError) {
+                    passwordError.textContent = 'Password is required';
+                    passwordError.style.display = 'block';
+                }
+                isValid = false;
+            }
+
+            return isValid;
+        }
+
+        // Login functionality with improved error handling
+        function initializeLogin() {
+            const loginForm = safeGetElement('loginForm');
+            if (!loginForm) return;
+
+            loginForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const loginBtn = safeGetElement('loginBtn');
+                const usernameInput = safeGetElement('username');
+                const passwordInput = safeGetElement('password');
+                
+                if (!usernameInput || !passwordInput) return;
+                
+                const username = usernameInput.value.trim();
+                const password = passwordInput.value.trim();
+
+                // Validate form
+                if (!validateLoginForm(username, password)) {
+                    return;
+                }
+
+                // Show loading state
+                if (loginBtn) {
+                    loginBtn.classList.add('loading');
+                    loginBtn.disabled = true;
+                }
+
+                // Simulate authentication delay
+                setTimeout(() => {
+                    try {
+                        if (username === 'admin' && password === 'password') {
+                            const loginPage = safeGetElement('loginPage');
+                            const dashboard = safeGetElement('dashboard');
+                            
+                            if (loginPage && dashboard) {
+                                loginPage.style.display = 'none';
+                                dashboard.classList.add('active');
+                                initializeDashboard();
+                            }
+                        } else {
+                            showError('Invalid credentials. Please use admin/password for demo access.');
+                        }
+                    } catch (error) {
+                        showError('Login failed: ' + error.message);
+                    } finally {
+                        // Remove loading state
+                        if (loginBtn) {
+                            loginBtn.classList.remove('loading');
+                            loginBtn.disabled = false;
+                        }
+                    }
+                }, 1000);
+            });
+        }
+
+        // Initialize dashboard with error handling
+        function initializeDashboard() {
+            try {
+                if (isInitialized) {
+                    console.warn('Dashboard already initialized');
+                    return;
+                }
+
+                initializeData();
+                createCharts();
+                startRealTimeUpdates();
+                updateCurrentTime();
+                initializeEventListeners();
+                isInitialized = true;
+            } catch (error) {
+                showError('Failed to initialize dashboard: ' + error.message);
+            }
+        }
+
+        // Create charts with error handling
+        function createCharts() {
+            const chartOptions = {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    x: { display: false },
+                    y: { display: false }
+                },
+                elements: {
+                    point: { radius: 0 },
+                    line: { borderWidth: 2 }
+                },
+                animation: {
+                    duration: 750
+                }
+            };
+
+            const chartConfigs = [
+                { id: 'heartRateChart', dataKey: 'heartRate', color: '#10b981' },
+                { id: 'oxygenChart', dataKey: 'oxygen', color: '#3b82f6' },
+                { id: 'respiratoryChart', dataKey: 'respiratory', color: '#8b5cf6' },
+                { id: 'pttChart', dataKey: 'ptt', color: '#f59e0b' },
+                { id: 'hrvChart', dataKey: 'hrv', color: '#06b6d4' },
+                { id: 'chestExpansionChart', dataKey: 'chestExpansion', color: '#84cc16' },
+                { id: 'legTempChart', dataKey: 'legTemp', color: '#ef4444' },
+                { id: 'legSwellingChart', dataKey: 'legSwelling', color: '#6366f1' }
+            ];
+
+            chartConfigs.forEach(config => {
+                try {
+                    const canvas = safeGetElement(config.id);
+                    if (!canvas) return;
+
+                    charts[config.dataKey] = new Chart(canvas, {
+                        type: 'line',
+                        data: {
+                            labels: Array.from({length: 20}, (_, i) => i),
+                            datasets: [{
+                                data: simulatedData[config.dataKey],
+                                borderColor: config.color,
+                                backgroundColor: config.color + '20',
+                                fill: true
+                            }]
+                        },
+                        options: chartOptions
+                    });
+                } catch (error) {
+                    showError(`Failed to create chart ${config.id}: ${error.message}`);
+                }
+            });
+        }
+
+        // Real-time data simulation with error handling
+        function startRealTimeUpdates() {
+            // Clear any existing interval
+            if (updateInterval) {
+                clearInterval(updateInterval);
+            }
+
+            updateInterval = setInterval(() => {
+                try {
+                    updateVitalSigns();
+                    updateCharts();
+                    updateAlertStatus();
+                    updateLastAssessment();
+                } catch (error) {
+                    showError('Real-time update failed: ' + error.message);
+                }
+            }, 5000);
+        }
+
+        // Update vital signs values with bounds checking
+        function updateVitalSigns() {
+            try {
+                // Heart Rate (60-120 BPM normal range)
+                const newHeartRate = Math.floor(Math.random() * 40) + 60;
+                const heartRateElement = safeGetElement('heartRateValue');
+                if (heartRateElement) {
+                    heartRateElement.textContent = newHeartRate;
+                    simulatedData.heartRate.shift();
+                    simulatedData.heartRate.push(newHeartRate);
+                    updateCardStatus('heartRateCard', newHeartRate, 60, 100);
+                }
+
+                // Oxygen Saturation (95-100% normal)
+                const newOxygen = Math.floor(Math.random() * 6) + 95;
+                const oxygenElement = safeGetElement('oxygenValue');
+                if (oxygenElement) {
+                    oxygenElement.textContent = newOxygen;
+                    simulatedData.oxygen.shift();
+                    simulatedData.oxygen.push(newOxygen);
+                    updateCardStatus('oxygenCard', newOxygen, 95, 100);
+                }
+
+                // Respiratory Rate (12-20 /min normal)
+                const newRespiratory = Math.floor(Math.random() * 9) + 12;
+                const respiratoryElement = safeGetElement('respiratoryValue');
+                if (respiratoryElement) {
+                    respiratoryElement.textContent = newRespiratory;
+                    simulatedData.respiratory.shift();
+                    simulatedData.respiratory.push(newRespiratory);
+                    updateCardStatus('respiratoryCard', newRespiratory, 12, 20);
+                }
+
+                // PTT (250-300ms normal)
+                const newPTT = Math.floor(Math.random() * 60) + 250;
+                const pttElement = safeGetElement('pttValue');
+                if (pttElement) {
+                    pttElement.textContent = newPTT;
+                    simulatedData.ptt.shift();
+                    simulatedData.ptt.push(newPTT);
+                    updateCardStatus('pttCard', newPTT, 250, 300);
+                }
+
+                // HRV (30-60 RMSSD normal)
+                const newHRV = Math.floor(Math.random() * 31) + 30;
+                const hrvElement = safeGetElement('hrvValue');
+                if (hrvElement) {
+                    hrvElement.textContent = newHRV;
+                    simulatedData.hrv.shift();
+                    simulatedData.hrv.push(newHRV);
+                    updateCardStatus('hrvCard', newHRV, 30, 60);
+                }
+
+                // Chest Expansion (70-95% normal)
+                const newChestExpansion = Math.floor(Math.random() * 26) + 70;
+                const chestExpansionElement = safeGetElement('chestExpansionValue');
+                if (chestExpansionElement) {
+                    chestExpansionElement.textContent = newChestExpansion;
+                    simulatedData.chestExpansion.shift();
+                    simulatedData.chestExpansion.push(newChestExpansion);
+                    updateCardStatus('chestExpansionCard', newChestExpansion, 70, 95);
+                }
+
+                // Leg Temperature (36-37.5°C normal)
+                const newLegTemp = parseFloat((Math.random() * 2.5 + 36).toFixed(1));
+                const legTempElement = safeGetElement('legTempValue');
+                if (legTempElement) {
+                    legTempElement.textContent = newLegTemp;
+                    simulatedData.legTemp.shift();
+                    simulatedData.legTemp.push(newLegTemp);
+                    
+                    // Check for temperature differential (simulate left vs right)
+                    const tempDiff = Math.abs((Math.random() * 1.5).toFixed(1));
+                    updateCardStatus('legTempCard', tempDiff, 0, 0.8);
+                }
+
+                // Leg Swelling (-2% to +2% normal)
+                const newLegSwelling = parseFloat((Math.random() * 6 - 3).toFixed(1));
+                const legSwellingElement = safeGetElement('legSwellingValue');
+                if (legSwellingElement) {
+                    legSwellingElement.textContent = (newLegSwelling > 0 ? '+' : '') + newLegSwelling;
+                    simulatedData.legSwelling.shift();
+                    simulatedData.legSwelling.push(newLegSwelling);
+                    updateCardStatus('legSwellingCard', Math.abs(newLegSwelling), 0, 2);
+                }
+
+                // Update risk score based on current values
+                updateRiskScore();
+            } catch (error) {
+                showError('Failed to update vital signs: ' + error.message);
+            }
+        }
+
+        // Update card status based on values with null checks
+        function updateCardStatus(cardId, value, normalMin, normalMax) {
+            const card = safeGetElement(cardId);
+            if (!card) return;
+
+            card.classList.remove('normal', 'warning', 'critical');
+
+            try {
+                if (cardId === 'legTempCard') {
+                    // Special case for temperature differential
+                    if (value <= 0.8) {
+                        card.classList.add('normal');
+                    } else if (value <= 1.5) {
+                        card.classList.add('warning');
+                    } else {
+                        card.classList.add('critical');
+                    }
+                } else if (cardId === 'legSwellingCard') {
+                    // Special case for swelling
+                    if (value <= 2) {
+                        card.classList.add('normal');
+                    } else if (value <= 3) {
+                        card.classList.add('warning');
+                    } else {
+                        card.classList.add('critical');
+                    }
+                } else {
+                    // Standard vital signs with null checks
+                    if (typeof value !== 'number' || isNaN(value)) {
+                        card.classList.add('warning');
+                    } else if (value >= normalMin && value <= normalMax) {
+                        card.classList.add('normal');
+                    } else if ((value >= normalMin * 0.8 && value < normalMin) || 
+                              (value > normalMax && value <= normalMax * 1.2)) {
+                        card.classList.add('warning');
+                    } else {
+                        card.classList.add('critical');
+                    }
+                }
+            } catch (error) {
+                showError(`Failed to update card status for ${cardId}: ${error.message}`);
+                card.classList.add('warning');
+            }
+        }
+
+        // Update risk score with error handling
+        function updateRiskScore() {
+            try {
+                const risks = [];
+                
+                // Safely get current values
+                const currentHR = parseInt(safeGetElement('heartRateValue')?.textContent || '0');
+                const currentO2 = parseInt(safeGetElement('oxygenValue')?.textContent || '0');
+                const currentResp = parseInt(safeGetElement('respiratoryValue')?.textContent || '0');
+                const currentSwelling = Math.abs(parseFloat(safeGetElement('legSwellingValue')?.textContent || '0'));
+
+                // Check each vital sign for risk factors
+                if (currentHR > 100 || currentHR < 50) risks.push(1);
+                if (currentO2 < 95) risks.push(1);
+                if (currentResp > 22 || currentResp < 10) risks.push(1);
+                if (currentSwelling > 2) risks.push(1);
+
+                const totalRisk = risks.reduce((a, b) => a + b, 0);
+                const riskCard = safeGetElement('riskScoreCard');
+                const riskCircle = riskCard?.querySelector('.risk-circle');
+
+                if (!riskCard || !riskCircle) return;
+
+                riskCard.classList.remove('normal', 'warning', 'critical');
+                riskCircle.classList.remove('risk-low', 'risk-moderate', 'risk-high');
+
+                if (totalRisk === 0) {
+                    riskCard.classList.add('normal');
+                    riskCircle.classList.add('risk-low');
+                    riskCircle.textContent = 'LOW';
+                } else if (totalRisk <= 2) {
+                    riskCard.classList.add('warning');
+                    riskCircle.classList.add('risk-moderate');
+                    riskCircle.textContent = 'MODERATE';
+                } else {
+                    riskCard.classList.add('critical');
+                    riskCircle.classList.add('risk-high');
+                    riskCircle.textContent = 'HIGH';
+                }
+            } catch (error) {
+                showError('Failed to update risk score: ' + error.message);
+            }
+        }
+
+        // Update charts with new data and error handling
+        function updateCharts() {
+            try {
+                Object.keys(charts).forEach(chartKey => {
+                    if (charts[chartKey] && simulatedData[chartKey]) {
+                        charts[chartKey].data.datasets[0].data = [...simulatedData[chartKey]];
+                        charts[chartKey].update('none');
+                    }
+                });
+            } catch (error) {
+                showError('Failed to update charts: ' + error.message);
+            }
+        }
+
+        // Update alert status
+        function updateAlertStatus() {
+            try {
+                const alertBadge = safeGetElement('alertBadge');
+                if (alertBadge) {
+                    const alertCount = Math.floor(Math.random() * 5) + 1;
+                    alertBadge.innerHTML = `<i class="fas fa-exclamation-triangle" aria-hidden="true"></i> <span class="sr-only">Alert count:</span>${alertCount} Alert${alertCount !== 1 ? 's' : ''}`;
+                }
+            } catch (error) {
+                showError('Failed to update alert status: ' + error.message);
+            }
+        }
+
+        // Update last assessment time
+        function updateLastAssessment() {
+            try {
+                const lastAssessmentElement = safeGetElement('lastAssessment');
+                if (lastAssessmentElement) {
+                    const now = new Date();
+                    const minutes = Math.floor(Math.random() * 10) + 1;
+                    lastAssessmentElement.textContent = `${minutes} minute${minutes !== 1 ? 's' : ''} ago`;
+                }
+            } catch (error) {
+                console.warn('Failed to update last assessment time:', error.message);
+            }
+        }
+
+        // Update current time with error handling
+        function updateCurrentTime() {
+            // Clear any existing interval
+            if (timeInterval) {
+                clearInterval(timeInterval);
+            }
+
+            const updateTime = () => {
+                try {
+                    const now = new Date();
+                    const timeString = now.toLocaleTimeString('en-US', { 
+                        hour12: false,
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    });
+                    const currentTimeElement = safeGetElement('currentTime');
+                    if (currentTimeElement) {
+                        currentTimeElement.textContent = timeString;
+                    }
+                } catch (error) {
+                    console.warn('Failed to update current time:', error.message);
+                }
+            };
+
+            // Update immediately
+            updateTime();
+            
+            // Then update every second
+            timeInterval = setInterval(updateTime, 1000);
+        }
+
+        // Initialize event listeners
+        function initializeEventListeners() {
+            try {
+                // Patient selector change
+                const patientSelect = safeGetElement('patientSelect');
+                if (patientSelect) {
+                    patientSelect.addEventListener('change', function() {
+                        const patientData = {
+                            '1': { name: 'Sarah Johnson', id: '12345', age: '72', avatar: 'SJ' },
+                            '2': { name: 'Robert Chen', id: '67890', age: '68', avatar: 'RC' },
+                            '3': { name: 'Maria Garcia', id: '54321', age: '75', avatar: 'MG' }
+                        };
+
+                        const selected = patientData[this.value];
+                        if (selected) {
+                            const patientNameElement = document.querySelector('.patient-name');
+                            const patientIdElement = document.querySelector('.patient-id');
+                            const patientAvatarElement = document.querySelector('.patient-avatar');
+
+                            if (patientNameElement) patientNameElement.textContent = selected.name;
+                            if (patientIdElement) patientIdElement.textContent = `ID: ${selected.id} | Age: ${selected.age}`;
+                            if (patientAvatarElement) patientAvatarElement.textContent = selected.avatar;
+
+                            // Reset data and charts for new patient
+                            initializeData();
+                            updateCharts();
+                        }
+                    });
+                }
+
+                // Alert acknowledgment with better event delegation
+                document.addEventListener('click', function(e) {
+                    if (e.target.matches('button[data-alert-id]') && e.target.textContent.trim() === 'Ack') {
+                        e.target.textContent = 'Acked';
+                        e.target.style.backgroundColor = 'var(--success-green)';
+                        e.target.disabled = true;
+                        e.target.setAttribute('aria-label', 'Alert acknowledged');
+                    }
+                });
+
+                // Emergency contact simulation
+                const emergencyBtn = document.querySelector('.emergency-btn');
+                if (emergencyBtn) {
+                    emergencyBtn.addEventListener('click', function() {
+                        const currentTime = new Date().toLocaleTimeString();
+                        alert(`Emergency contact initiated!\n\nCalling: Dr. Smith (555-0123)\nNotifying: Nursing Station\nTime: ${currentTime}`);
+                    });
+                }
+
+                // Add keyboard navigation for cards
+                const vitalCards = document.querySelectorAll('.vital-card');
+                vitalCards.forEach(card => {
+                    card.addEventListener('click', handleCardClick);
+                    card.addEventListener('keydown', function(e) {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            handleCardClick.call(this);
+                        }
+                    });
+                });
+
+                // Device interaction
+                const deviceItems = document.querySelectorAll('.device-item');
+                deviceItems.forEach(item => {
+                    item.addEventListener('click', handleDeviceClick);
+                    item.addEventListener('keydown', function(e) {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            handleDeviceClick.call(this);
+                        }
+                    });
+                });
+
+            } catch (error) {
+                showError('Failed to initialize event listeners: ' + error.message);
+            }
+        }
+
+        // Handle card click events
+        function handleCardClick() {
+            try {
+                const cardTitle = this.querySelector('.card-title')?.textContent?.trim() || 'Unknown Parameter';
+                alert(`Opening detailed view for: ${cardTitle}\n\nThis would show:\n• 24-hour trend analysis\n• Historical data\n• Alert history\n• Clinical notes`);
+            } catch (error) {
+                showError('Failed to handle card click: ' + error.message);
+            }
+        }
+
+        // Handle device click events
+        function handleDeviceClick() {
+            try {
+                const deviceName = this.querySelector('.device-info div div')?.textContent || 'Unknown Device';
+                const statusElement = this.querySelector('.device-connection-status');
+                
+                if (Math.random() > 0.7 && statusElement) {
+                    // Simulate occasional disconnect
+                    statusElement.textContent = 'Reconnecting...';
+                    statusElement.style.color = 'var(--warning-yellow)';
+                    
+                    setTimeout(() => {
+                        statusElement.textContent = 'Connected';
+                        statusElement.style.color = 'var(--text-secondary)';
+                    }, 2000);
+                }
+            } catch (error) {
+                console.warn('Device interaction error:', error.message);
+            }
+        }
+
+        // Logout function with cleanup
+        function logout() {
+            try {
+                // Clear intervals
+                if (updateInterval) {
+                    clearInterval(updateInterval);
+                    updateInterval = null;
+                }
+                if (timeInterval) {
+                    clearInterval(timeInterval);
+                    timeInterval = null;
+                }
+
+                // Destroy charts
+                Object.keys(charts).forEach(chartKey => {
+                    if (charts[chartKey]) {
+                        charts[chartKey].destroy();
+                    }
+                });
+                charts = {};
+
+                // Reset state
+                isInitialized = false;
+
+                // Switch to login page
+                const dashboard = safeGetElement('dashboard');
+                const loginPage = safeGetElement('loginPage');
+                const usernameInput = safeGetElement('username');
+                const passwordInput = safeGetElement('password');
+
+                if (dashboard) dashboard.classList.remove('active');
+                if (loginPage) loginPage.style.display = 'flex';
+                if (usernameInput) usernameInput.value = '';
+                if (passwordInput) passwordInput.value = '';
+
+            } catch (error) {
+                showError('Logout failed: ' + error.message);
+            }
+        }
+
+        // Simulate network connectivity changes
+        function simulateNetworkChanges() {
+            setInterval(() => {
+                try {
+                    const statusIndicator = document.querySelector('.status-indicator');
+                    const statusText = document.querySelector('.connection-status span');
+                    
+                    if (Math.random() > 0.95 && statusIndicator && statusText) { // 5% chance
+                        statusIndicator.style.backgroundColor = 'var(--warning-yellow)';
+                        statusText.textContent = 'Reconnecting...';
+                        
+                        setTimeout(() => {
+                            statusIndicator.style.backgroundColor = 'var(--success-green)';
+                            statusText.textContent = 'Connected';
+                        }, 3000);
+                    }
+                } catch (error) {
+                    console.warn('Network simulation error:', error.message);
+                }
+            }, 10000);
+        }
+
+        // Initialize application when DOM is loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            try {
+                initializeLogin();
+                simulateNetworkChanges();
+                
+                // Set initial time immediately
+                const now = new Date();
+                const timeString = now.toLocaleTimeString('en-US', { 
+                    hour12: false,
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+                const currentTimeElement = safeGetElement('currentTime');
+                if (currentTimeElement) {
+                    currentTimeElement.textContent = timeString;
+                }
+            } catch (error) {
+                showError('Application initialization failed: ' + error.message);
+            }
+        });
+
+        // Handle page visibility changes to pause/resume updates
+        document.addEventListener('visibilitychange', function() {
+            try {
+                if (document.hidden) {
+                    // Pause updates when page is hidden
+                    if (updateInterval) {
+                        clearInterval(updateInterval);
+                        updateInterval = null;
+                    }
+                } else {
+                    // Resume updates when page becomes visible
+                    if (isInitialized && !updateInterval) {
+                        startRealTimeUpdates();
+                    }
+                }
+            } catch (error) {
+                console.warn('Visibility change handler error:', error.message);
+            }
+        });
+
+        // Handle window resize for responsive charts
+        window.addEventListener('resize', function() {
+            try {
+                Object.keys(charts).forEach(chartKey => {
+                    if (charts[chartKey]) {
+                        charts[chartKey].resize();
+                    }
+                });
+            } catch (error) {
+                console.warn('Chart resize error:', error.message);
+            }
+        });
+
+        // Expose logout function globally for onclick handler
+        window.logout = logout;
+
+        // Service worker registration (if available)
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function() {
+                // This would register a service worker in a real application
+                console.log('Service worker support detected');
+            });
+        }
+    </script>
+</body>
+</html>
